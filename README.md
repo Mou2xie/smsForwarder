@@ -7,12 +7,15 @@ smsForwarder is an Expo-powered React Native application that forwards incoming 
 
 ## Project Structure
 ```
-app/            # Expo Router entry points and screen components
-assets/         # Static images, icons, and fonts
-components/     # Reusable UI elements (buttons, form inputs, sheets)
-constants/      # Theme values, copy, feature flags
-hooks/          # Shared React hooks for data/state handling
-scripts/        # Developer utilities (e.g., project reset)
+app/
+  index.tsx       # Redirects into the tab navigator
+  _layout.tsx     # Root stack (placeholder for future screens)
+  (tabs)/
+    _layout.tsx   # Bottom tab configuration (Home, Log, Black list)
+    index.tsx     # Home dashboard with forwarding toggle + stats
+    log.tsx       # Recent message forwards list
+    blacklist.tsx # Blocked sender management
+assets/           # Static imagery and icons
 ```
 
 ## Getting Started
@@ -30,6 +33,11 @@ scripts/        # Developer utilities (e.g., project reset)
 - `npm run android` / `npm run ios` / `npm run web` – launch the bundler and open the selected platform directly.
 - `npm run lint` – run ESLint with the Expo config to enforce formatting and best practices.
 - `npm run reset-project` – reset the project to a clean starter state (destructive; use with caution).
+
+## Current Screens
+- **Home**: Displays forwarding toggle, destination summary, and shortcuts to logs/blacklist.
+- **Message log**: Lists forwarded messages with sender, preview, and timestamp (currently seeded with mock data).
+- **Black list**: Shows blocked senders and exposes add/remove entry placeholders.
 
 ## Development Notes
 - Target Node.js LTS (>=18) for predictable Expo CLI behavior.
