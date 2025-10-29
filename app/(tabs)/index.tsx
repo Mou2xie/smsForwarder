@@ -1,6 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -9,15 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useRouter } from 'expo-router';
 
 const forwardingNumber = '+1 (382) 889 3727';
 const messageCount = 123;
 const blacklistCount = 2;
 
 export default function MainScreen() {
+  
   const [forwardingEnabled, setForwardingEnabled] = useState(true);
   const router = useRouter();
 
@@ -27,7 +27,7 @@ export default function MainScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -38,9 +38,9 @@ export default function MainScreen() {
           <Switch
             trackColor={{ false: '#9aa4b5', true: '#4c5b73' }}
             thumbColor={forwardingEnabled ? '#ffffff' : '#f2f4f8'}
-            ios_backgroundColor="#9aa4b5"
             value={forwardingEnabled}
             onValueChange={setForwardingEnabled}
+            className=' h-10 border'
           />
         </View>
 
@@ -83,7 +83,7 @@ export default function MainScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
