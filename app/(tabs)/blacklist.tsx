@@ -1,3 +1,4 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useMemo } from 'react';
 import {
   FlatList,
@@ -8,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type BlockedEntry = {
   id: string;

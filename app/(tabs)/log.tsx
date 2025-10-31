@@ -1,13 +1,10 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useMemo } from 'react';
 import {
-  FlatList,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
+  ScrollView,
   Text,
-  View,
+  View
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type MessageLogItem = {
   id: string;
@@ -41,94 +38,30 @@ export default function MessageLogScreen() {
   const data = useMemo(() => mockLog, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
-        <Text style={styles.heading}>Recent forwards</Text>
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item }) => <MessageLogRow item={item} />}
-        />
+    <View className=' flex-1 bg-[#737F94]'>
+      <View className=' h-[80] px-10 flex flex-row justify-between items-center'>
+        <Text className=' text-white font-semibold text-2xl'>Message log</Text>
+        <MaterialCommunityIcons name="magnify" size={34} color="#CCD5E2" />
       </View>
-    </SafeAreaView>
-  );
-}
-
-function MessageLogRow({ item }: { item: MessageLogItem }) {
-  return (
-    <View style={styles.logRow}>
-      <View style={styles.iconCircle}>
-        <MaterialCommunityIcons name="arrow-top-right" size={20} color="#3c4d63" />
-      </View>
-      <View style={styles.logCopy}>
-        <Text style={styles.logSender}>{item.sender}</Text>
-        <Text style={styles.logPreview} numberOfLines={1}>
-          {item.preview}
-        </Text>
-      </View>
-      <Text style={styles.logTimestamp}>{item.forwardedAt}</Text>
+      <ScrollView className=' flex-grow bg-[#E3E9F0] rounded-t-[30] px-5 pt-5'>
+        {data.map((item) => (
+          <ListItem key={item.id} item={item} />
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#dbe3ec',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2939',
-    marginBottom: 16,
-  },
-  listContent: {
-    paddingBottom: 40,
-    gap: 16,
-  },
-  separator: {
-    height: 0,
-  },
-  logRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f7fa',
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    gap: 16,
-  },
-  iconCircle: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    backgroundColor: '#e4eaf3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  logSender: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2939',
-  },
-  logPreview: {
-    fontSize: 13,
-    color: '#52607a',
-  },
-  logTimestamp: {
-    fontSize: 12,
-    color: '#7b869b',
-  },
-});
+type ListItemProps = {
+  item: MessageLogItem;
+};
+
+const ListItem = ({item}:{item: MessageLogItem})=>{
+  return (
+    <View key={item.id} className=' mb-4 p-4 border border-gray-200 rounded-lg'>
+      <Text className=' text-gray-800 font-medium'>{item.sender}</Text>
+      <Text className=' text-gray-600 mt-1'>{item.preview}</Text>
+      <Text className=' text-gray-400 mt-2 text-sm'>{item.forwardedAt}</Text>
+    </View>
+  );
+}
