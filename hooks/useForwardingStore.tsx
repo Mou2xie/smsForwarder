@@ -1,4 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import * as SMS from 'expo-sms';
+import { NativeEventEmitter, NativeModules, PermissionsAndroid, Platform } from 'react-native';
 
 export type MessageLogItem = {
   id: string;
@@ -27,37 +29,39 @@ type ForwardingStoreValue = {
   addBlockedEntry: (label: string) => { success: boolean; reason?: string };
   removeBlockedEntry: (id: string) => void;
   isSenderBlocked: (label: string) => boolean;
+  forwardIncomingMessage: (payload: ForwardMessagePayload) => Promise<ForwardMessageResult>;
 };
+
+export type ForwardMessagePayload = {
+  sender: string;
+  body: string;
+  receivedAt?: Date | string;
+};
+
+export type ForwardMessageResult =
+  | { success: true }
+  | {
+    success: false;
+    reason:
+      | 'DISABLED'
+      | 'MISSING_FORWARD_NUMBER'
+      | 'BLACKLISTED'
+      | 'SMS_UNAVAILABLE'
+      | 'FAILED'
+      | 'CANCELLED';
+    error?: Error;
+  };
 
 const ForwardingStoreContext = createContext<ForwardingStoreValue | undefined>(undefined);
 
-const initialLog: MessageLogItem[] = [
-  {
-    id: '1',
-    sender: '+1 555-1234',
-    preview: 'Verification code 284953',
-    forwardedAt: 'Today 13:20',
-  },
-  {
-    id: '2',
-    sender: 'My Bank',
-    preview: 'Your account was accessed from a new device.',
-    forwardedAt: 'Today 07:45',
-  },
-  {
-    id: '3',
-    sender: '+1 213-9876',
-    preview: 'Package delivered at front door.',
-    forwardedAt: '10/22 18:04',
-  },
-];
+const DEFAULT_FORWARDING_NUMBER = '';
 
-const initialBlacklist: BlockedEntry[] = [
-  { id: '1', label: '+1 555-222-0199' },
-  { id: '2', label: 'Spam Service' },
-];
-
-const DEFAULT_FORWARDING_NUMBER = '+1 (382) 889 3727';
+const SmsNativeModule = NativeModules.SmsForwardingModule as undefined | {
+  getEventName?: () => Promise<string>;
+  isDefaultSmsApp?: () => Promise<boolean>;
+  openDefaultSmsPicker?: () => Promise<unknown>;
+  sendForwardedMessage?: (address: string, body: string) => Promise<void>;
+};
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -75,11 +79,18 @@ function formatForwardedAt(value: Date | string | undefined) {
   return value;
 }
 
+function formatForwardPayload(sender: string, body: string) {
+  const header = sender.trim().length > 0 ? `From: ${sender}` : 'From: Unknown sender';
+  const spacer = Platform.select({ ios: '\n\n', default: '\n\n' }) ?? '\n\n';
+
+  return `${header}${spacer}${body}`;
+}
+
 export function ForwardingStoreProvider({ children }: { children: ReactNode }) {
   const [forwardingEnabled, setForwardingEnabled] = useState(true);
   const [forwardingNumber, setForwardingNumber] = useState(DEFAULT_FORWARDING_NUMBER);
-  const [messageLog, setMessageLog] = useState<MessageLogItem[]>(initialLog);
-  const [blacklist, setBlacklist] = useState<BlockedEntry[]>(initialBlacklist);
+  const [messageLog, setMessageLog] = useState<MessageLogItem[]>([]);
+  const [blacklist, setBlacklist] = useState<BlockedEntry[]>([]);
 
   const toggleForwarding = useCallback((enabled: boolean) => {
     setForwardingEnabled(enabled);
@@ -145,6 +156,100 @@ export function ForwardingStoreProvider({ children }: { children: ReactNode }) {
     return blacklist.some((item) => item.label.toLowerCase() === normalized);
   }, [blacklist]);
 
+  const forwardIncomingMessage = useCallback(async ({ sender, body, receivedAt }: ForwardMessagePayload): Promise<ForwardMessageResult> => {
+    if (!forwardingEnabled) {
+      return { success: false, reason: 'DISABLED' };
+    }
+
+    if (!forwardingNumber) {
+      return { success: false, reason: 'MISSING_FORWARD_NUMBER' };
+    }
+
+    if (isSenderBlocked(sender)) {
+      return { success: false, reason: 'BLACKLISTED' };
+    }
+
+    try {
+      if (Platform.OS === 'android' && SmsNativeModule?.sendForwardedMessage) {
+        await SmsNativeModule.sendForwardedMessage(forwardingNumber, formatForwardPayload(sender, body));
+        const preview = body.length > 160 ? `${body.slice(0, 157).trimEnd()}…` : body;
+        recordForwardedMessage({ sender, preview, forwardedAt: receivedAt });
+        return { success: true };
+      }
+
+      const canSend = await SMS.isAvailableAsync();
+
+      if (!canSend) {
+        return { success: false, reason: 'SMS_UNAVAILABLE' };
+      }
+
+      const result = await SMS.sendSMSAsync([forwardingNumber], formatForwardPayload(sender, body));
+      const outcome = typeof result === 'string' ? result : result.result;
+
+      if (outcome === 'sent' || outcome === 'queued') {
+        const preview = body.length > 160 ? `${body.slice(0, 157).trimEnd()}…` : body;
+
+        recordForwardedMessage({ sender, preview, forwardedAt: receivedAt });
+        return { success: true };
+      }
+
+      if (outcome === 'cancelled') {
+        return { success: false, reason: 'CANCELLED' };
+      }
+
+      return { success: false, reason: 'FAILED' };
+    } catch (error) {
+      return {
+        success: false,
+        reason: 'FAILED',
+        error: error instanceof Error ? error : new Error('Failed to forward message'),
+      };
+    }
+  }, [forwardingEnabled, forwardingNumber, isSenderBlocked, recordForwardedMessage]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !SmsNativeModule) {
+      return;
+    }
+
+    const requestPermissions = async () => {
+      try {
+        await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.RECEIVE_SMS ?? '',
+          PermissionsAndroid.PERMISSIONS.READ_SMS ?? '',
+          PermissionsAndroid.PERMISSIONS.SEND_SMS ?? '',
+        ].filter(Boolean));
+      } catch {
+        // ignore permission request errors; user may reject
+      }
+    };
+
+    requestPermissions();
+
+    const emitter = new NativeEventEmitter(NativeModules.SmsForwardingModule);
+    const subscription = emitter.addListener('SmsForwardingModule.onSmsReceived', (payload: { sender?: string; body?: string; timestamp?: number }) => {
+      if (!payload?.body) {
+        return;
+      }
+
+      const receivedAt = typeof payload.timestamp === 'number'
+        ? new Date(payload.timestamp)
+        : undefined;
+
+      forwardIncomingMessage({
+        sender: payload.sender ?? '',
+        body: payload.body,
+        receivedAt,
+      }).catch(() => {
+        // Swallow forwarding errors here; UI can reflect via logs elsewhere
+      });
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [forwardIncomingMessage]);
+
   const value = useMemo<ForwardingStoreValue>(() => ({
     forwardingEnabled,
     forwardingNumber,
@@ -156,6 +261,7 @@ export function ForwardingStoreProvider({ children }: { children: ReactNode }) {
     addBlockedEntry,
     removeBlockedEntry,
     isSenderBlocked,
+    forwardIncomingMessage,
   }), [
     forwardingEnabled,
     forwardingNumber,
@@ -167,6 +273,7 @@ export function ForwardingStoreProvider({ children }: { children: ReactNode }) {
     addBlockedEntry,
     removeBlockedEntry,
     isSenderBlocked,
+    forwardIncomingMessage,
   ]);
 
   return (

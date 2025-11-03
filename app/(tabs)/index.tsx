@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -52,12 +51,12 @@ export default function MainScreen() {
   }, [draftNumber, updateForwardingNumber, closeEditor]);
 
   return (
-    <View style={styles.safeArea}>
+    <View className='flex-1 bg-[#dbe3ec]'>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.container}
+        contentContainerClassName='px-6 pt-8 pb-10 gap-6'
         showsVerticalScrollIndicator={false}>
-        <View className=' px-10'>
+        <View className='px-10'>
           <Switch
             style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
             trackColor={{ false: '#9aa4b5', true: '#4c5b73' }}
@@ -67,14 +66,14 @@ export default function MainScreen() {
           />
         </View>
 
-        <View style={styles.cardStack}>
-          <View style={styles.forwardingCard} className=' h-[180]'>
-            <View style={styles.cardDecorCircleLarge} />
-            <View style={styles.cardDecorCircleSmall} />
+        <View className='gap-[15px]'>
+          <View className='h-[180] bg-[#3c4d63] rounded-[18px] p-6 relative overflow-hidden'>
+            <View className='absolute w-[230px] h-[230px] rounded-[125px] bg-[rgba(255,255,255,0.06)] top-[-50px] left-[-70px]' />
+            <View className='absolute w-[160px] h-[160px] rounded-[80px] bg-[rgba(255,255,255,0.04)] top-[-50px] left-[-20px]' />
             <Ionicons name="paper-plane-outline" size={30} color="#64748C" />
-            <View className=' flex-1'></View>
-            <Text style={styles.forwardingLabel}>Forwarding to</Text>
-            <Text style={styles.forwardingNumber}>{forwardingNumber}</Text>
+            <View className='flex-1'></View>
+            <Text className='text-[18px] text-[#d0d9e6]'>Forwarding to</Text>
+            <Text className='mt-[2px] text-[26px] font-bold text-[#f5f7fa]'>{forwardingNumber}</Text>
 
             <TouchableOpacity
               accessibilityRole="button"
@@ -82,12 +81,12 @@ export default function MainScreen() {
               onPress={() => {
                 openEditor();
               }}
-              style={styles.editButton}>
+              className='absolute top-4 right-4 h-9 w-9 rounded-full bg-[rgba(255,255,255,0.08)] items-center justify-center'>
               <MaterialCommunityIcons name="pencil-outline" size={22} color="#c8d1e0" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.inlineCards}>
+          <View className='gap-[15px]'>
             <HomeStatCard
               icon={<MaterialCommunityIcons name="arrow-top-right" size={30} color="#d5deec" />}
               label="Message log"
@@ -112,9 +111,9 @@ export default function MainScreen() {
         transparent
         visible={isEditingNumber}
         onRequestClose={closeEditor}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Update forwarding number</Text>
+        <View className='flex-1 bg-[rgba(15,23,42,0.65)] items-center justify-center px-6'>
+          <View className='w-full max-w-[360px] bg-[#f8fafc] rounded-[18px] py-6 px-5 gap-[18px]'>
+            <Text className='text-[20px] font-semibold text-[#1f2939] text-left'>Update forwarding number</Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
@@ -124,14 +123,14 @@ export default function MainScreen() {
               placeholderTextColor="#94a3b8"
               value={draftNumber}
               onChangeText={setDraftNumber}
-              style={styles.modalInput}
+              className='rounded-[12px] border border-[#cbd5f5] px-4 py-3 text-[16px] text-[#1f2939] bg-white'
             />
-            <View style={styles.modalActions}>
-              <TouchableOpacity onPress={closeEditor} style={styles.modalSecondaryButton}>
-                <Text style={styles.modalSecondaryLabel}>Cancel</Text>
+            <View className='flex-row justify-end gap-3'>
+              <TouchableOpacity onPress={closeEditor} className='px-[18px] py-3 rounded-[12px]'>
+                <Text className='text-[16px] text-[#475569]'>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={submitNumber} style={styles.modalPrimaryButton}>
-                <Text style={styles.modalPrimaryLabel}>Save</Text>
+              <TouchableOpacity onPress={submitNumber} className='px-5 py-3 rounded-[12px] bg-[#3c4d63]'>
+                <Text className='text-[16px] font-semibold text-[#f5f7fa]'>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -162,175 +161,19 @@ function HomeStatCard({
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={[styles.statCard, { backgroundColor }]}>
-      <View style={[styles.statCardAccent, { backgroundColor: accentCircleColor }]} />
-      <View style={styles.statCardContent}>
-        <View style={styles.statCardLabelRow}>
+      className='rounded-[16px] py-[14px] px-5 overflow-hidden'
+      style={{ backgroundColor }}>
+      <View
+        className='absolute w-[110px] h-[110px] rounded-[80px] top-[-30px] right-[-40px]'
+        style={{ backgroundColor: accentCircleColor }}
+      />
+      <View className='flex-row items-center justify-between'>
+        <View className='flex flex-col gap-[5px]'>
           <View>{icon}</View>
-          <Text style={styles.statCardLabel}>{label}</Text>
+          <Text className='text-[18px] text-[#d0d9e6]'>{label}</Text>
         </View>
-        <Text style={styles.statCardValue}>{value}</Text>
+        <Text className='self-end text-[22px] text-[#f5f7fa]'>{value}</Text>
       </View>
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#dbe3ec',
-  },
-  container: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 40,
-    gap: 24,
-  },
-  statusLabel: {
-    fontSize: 16,
-    color: '#394867',
-    fontWeight: '500',
-  },
-  cardStack: {
-    gap: 15,
-  },
-  forwardingCard: {
-    backgroundColor: '#3c4d63',
-    borderRadius: 18,
-    padding: 24,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  forwardingLabel: {
-    fontSize: 18,
-    color: '#d0d9e6',
-  },
-  forwardingNumber: {
-    marginTop: 2,
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#f5f7fa',
-  },
-  editButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    height: 36,
-    width: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardDecorCircleLarge: {
-    position: 'absolute',
-    width: 230,
-    height: 230,
-    borderRadius: 125,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    top: -50,
-    left: -70,
-  },
-  cardDecorCircleSmall: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    top: -50,
-    left: -20,
-  },
-  inlineCards: {
-    gap: 15,
-  },
-  statCard: {
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    overflow: 'hidden',
-  },
-  statCardAccent: {
-    position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: 80,
-    top: -30,
-    right: -40,
-  },
-  statCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statCardLabelRow: {
-    flexDirection: 'column',
-    gap: 5,
-  },
-  statCardLabel: {
-    fontSize: 18,
-    color: '#d0d9e6',
-  },
-  statCardValue: {
-    alignSelf: 'flex-end',
-    fontSize: 22,
-    color: '#f5f7fa',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    gap: 18,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1f2939',
-    textAlign: 'left',
-  },
-  modalInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#cbd5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#1f2939',
-    backgroundColor: '#ffffff',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalSecondaryButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  modalSecondaryLabel: {
-    fontSize: 16,
-    color: '#475569',
-  },
-  modalPrimaryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#3c4d63',
-  },
-  modalPrimaryLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#f5f7fa',
-  },
-});
