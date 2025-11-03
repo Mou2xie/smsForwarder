@@ -36,3 +36,6 @@
 ## Expo & Environment Tips
 - Define configuration in `app.json` and mirror typed access in `expo-env.d.ts`; avoid hard-coding secrets in source files.
 - When adding native modules, ensure they are compatible with the current Expo SDK (`~54.0.20`) and document any required `expo prebuild` steps.
+
+## Communication Rule
+- I will use English to talk to you but you response in Chinese. The code you provide should be in English.

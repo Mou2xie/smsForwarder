@@ -1,24 +1,55 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
+  Modal,
+  TextInput,
   View,
 } from 'react-native';
 
-const forwardingNumber = '+1 (382) 889 3727';
-const messageCount = 123;
-const blacklistCount = 2;
+import { useForwardingStore } from '../../hooks/useForwardingStore';
 
 export default function MainScreen() {
-
-  const [forwardingEnabled, setForwardingEnabled] = useState(true);
   const router = useRouter();
+  const {
+    forwardingEnabled,
+    forwardingNumber,
+    messageLog,
+    blacklist,
+    toggleForwarding,
+    updateForwardingNumber,
+  } = useForwardingStore();
+  const [isEditingNumber, setIsEditingNumber] = useState(false);
+  const [draftNumber, setDraftNumber] = useState(forwardingNumber);
+
+  const messageCount = messageLog.length;
+  const blacklistCount = blacklist.length;
+
+  const openEditor = useCallback(() => {
+    setDraftNumber(forwardingNumber);
+    setIsEditingNumber(true);
+  }, [forwardingNumber]);
+
+  const closeEditor = useCallback(() => {
+    setIsEditingNumber(false);
+  }, []);
+
+  const submitNumber = useCallback(() => {
+    const trimmed = draftNumber.trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    updateForwardingNumber(trimmed);
+    closeEditor();
+  }, [draftNumber, updateForwardingNumber, closeEditor]);
 
   return (
     <View style={styles.safeArea}>
@@ -32,7 +63,7 @@ export default function MainScreen() {
             trackColor={{ false: '#9aa4b5', true: '#4c5b73' }}
             thumbColor={forwardingEnabled ? '#ffffff' : '#f2f4f8'}
             value={forwardingEnabled}
-            onValueChange={setForwardingEnabled}
+            onValueChange={toggleForwarding}
           />
         </View>
 
@@ -49,7 +80,7 @@ export default function MainScreen() {
               accessibilityRole="button"
               accessibilityLabel="Change forwarding number"
               onPress={() => {
-                // TODO: hook up to edit flow
+                openEditor();
               }}
               style={styles.editButton}>
               <MaterialCommunityIcons name="pencil-outline" size={22} color="#c8d1e0" />
@@ -76,6 +107,36 @@ export default function MainScreen() {
           </View>
         </View>
       </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isEditingNumber}
+        onRequestClose={closeEditor}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Update forwarding number</Text>
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+              keyboardType="phone-pad"
+              placeholder="Enter number"
+              placeholderTextColor="#94a3b8"
+              value={draftNumber}
+              onChangeText={setDraftNumber}
+              style={styles.modalInput}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={closeEditor} style={styles.modalSecondaryButton}>
+                <Text style={styles.modalSecondaryLabel}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={submitNumber} style={styles.modalPrimaryButton}>
+                <Text style={styles.modalPrimaryLabel}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -212,6 +273,64 @@ const styles = StyleSheet.create({
   statCardValue: {
     alignSelf: 'flex-end',
     fontSize: 22,
+    color: '#f5f7fa',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#f8fafc',
+    borderRadius: 18,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    gap: 18,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1f2939',
+    textAlign: 'left',
+  },
+  modalInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#cbd5f5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#1f2939',
+    backgroundColor: '#ffffff',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalSecondaryButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+  },
+  modalSecondaryLabel: {
+    fontSize: 16,
+    color: '#475569',
+  },
+  modalPrimaryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#3c4d63',
+  },
+  modalPrimaryLabel: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#f5f7fa',
   },
 });
